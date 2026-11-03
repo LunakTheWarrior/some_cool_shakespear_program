@@ -13,5 +13,9 @@ Local changes:
   the original compiler and runtime using rules_cc.
 - `include/character.wordlist`: add the sixteen Norwegian character names used
   by `main.spl`. The original Shakespearean names remain available to other plays.
+- `include/roman_numbers.metaflex`: explicitly group numeral alternatives and
+  replace bounded repetitions with optional letters. This preserves the numeral
+  language across Flex's default and POSIX repetition-precedence rules. Both
+  scanner modes are covered by `//:compiler_test`.
 
 The SPL grammar and arithmetic semantics are unchanged.

@@ -34,3 +34,19 @@ sh_test(
         "tests/test_renderer.py",
     ] + glob(["tests/golden/*.txt"], allow_empty = True),
 )
+
+sh_test(
+    name = "compiler_test",
+    size = "small",
+    srcs = ["tests/run_compiler_tests.sh"],
+    args = [
+        "$(rootpath //third_party/spl:spl2c)",
+        "$(rootpath //third_party/spl:spl2c_posix)",
+    ],
+    data = [
+        "//third_party/spl:spl2c",
+        "//third_party/spl:spl2c_posix",
+        "main.spl",
+        "tests/test_compiler.py",
+    ],
+)

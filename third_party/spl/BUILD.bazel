@@ -45,6 +45,29 @@ cc_binary(
     linkopts = ["-lfl"],
 )
 
+# Exercise scanner portability with the same parser and word lists.
+genrule(
+    name = "lexer_posix",
+    testonly = True,
+    srcs = [":lexer_spec"],
+    outs = ["scanner_posix.c"],
+    cmd = "flex --posix -Cem -t $< > $@",
+)
+
+cc_binary(
+    name = "spl2c_posix",
+    testonly = True,
+    includes = ["."],
+    srcs = [
+        ":lexer_posix",
+        ":parser",
+        "strutils.c",
+        "strutils.h",
+        "telma.h",
+    ],
+    linkopts = ["-lfl"],
+)
+
 cc_library(
     name = "runtime",
     srcs = ["libspl.c", "strutils.c"],

@@ -84,7 +84,8 @@ This regression check simulates a broken compiler wrapper in both `CC` and
 Both builds run the full suite. It uses the installed Bazel and system GCC;
 ccache itself is not required for this simulation.
 
-The suite runs 12 checks against the compiled SPL executables:
+The suite runs 12 checks against the compiled SPL executables and four compiler
+regression tests:
 
 - [`tests/arithmetic.spl`](tests/arithmetic.spl) exercises square, integer square
   root, signed division, multiplication, and remainder.
@@ -94,6 +95,9 @@ The suite runs 12 checks against the compiled SPL executables:
   frame dimensions and ASCII palette, reviewed golden frames, the sphere's
   analytic silhouette and light direction, the torus hole, the cube's three
   face shades, distinct shapes, EOF behavior, and input selection.
+- [`tests/test_compiler.py`](tests/test_compiler.py) checks Roman-numeral scene
+  and act headers and jumps, mixed case and whitespace, and identical renderer
+  translation using scanners generated in Flex's default and POSIX modes.
 
 Snapshots in [`tests/golden`](tests/golden) preserve all spaces, including those
 at the end of each row. Geometric assertions check the output independently
