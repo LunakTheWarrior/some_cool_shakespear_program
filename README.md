@@ -18,6 +18,24 @@ are available with:
 sudo apt-get install build-essential bison flex libfl-dev python3
 ```
 
+On Fedora:
+
+```sh
+sudo dnf install gcc gcc-c++ bison flex libfl-devel python3
+```
+
+The project `.bazelrc` selects `/usr/bin/gcc` directly, bypassing compiler
+wrappers in `PATH` and an inherited `CC`. It also sets `CCACHE_DISABLE=1` for
+toolchain configuration and build actions, so ccache wrappers do not try to
+write their cache inside Bazel's sandbox. Bazel provides its own build cache.
+These defaults apply to `bazel build`, `bazel run`, and `bazel test`.
+
+To select another compiler explicitly, override the project default:
+
+```sh
+bazel build //:ascii3d --repo_env=CC=/usr/bin/clang
+```
+
 Build once and select a shape with its initial letter:
 
 ```sh
@@ -54,6 +72,17 @@ with those dependencies installed.
 ```sh
 bazel test //... --test_output=errors
 ```
+
+To additionally check host compiler-wrapper compatibility in an isolated build:
+
+```sh
+bash tests/check_ccache_build.sh
+```
+
+This regression check simulates a broken compiler wrapper in both `CC` and
+`PATH`, then an explicitly selected wrapper that requires `CCACHE_DISABLE=1`.
+Both builds run the full suite. It uses the installed Bazel and system GCC;
+ccache itself is not required for this simulation.
 
 The suite runs 12 checks against the compiled SPL executables:
 

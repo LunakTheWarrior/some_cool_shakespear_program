@@ -1,0 +1,11 @@
+# Use the real system compiler instead of PATH shims or an inherited CC wrapper.
+# A command-line --repo_env=CC=/path/to/compiler can override this default.
+build --repo_env=CC=/usr/bin/gcc
+
+# Compiler probes run during repository configuration; compilations run as
+# actions. Cover both when a host or an explicit override still uses ccache.
+# Bazel already caches compilation outputs.
+build --repo_env=CCACHE_DISABLE=1
+build --action_env=CCACHE_DISABLE=1
+# The SPL compiler itself is built in the execution configuration.
+build --host_action_env=CCACHE_DISABLE=1
