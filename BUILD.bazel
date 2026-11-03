@@ -1,9 +1,22 @@
 load("//bazel:spl.bzl", "spl_binary")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 spl_binary(
-    name = "ascii3d",
+    name = "pyramid_play",
     src = "main.spl",
+)
+
+sh_binary(
+    name = "ascii3d",
+    srcs = ["tools/ascii3d.sh"],
+    data = [":pyramid_play", "tools/animate.py"],
+    deps = ["@rules_shell//shell/runfiles"],
+)
+
+spl_binary(
+    name = "gallery",
+    src = "gallery.spl",
 )
 
 spl_binary(
@@ -23,16 +36,29 @@ sh_test(
     size = "small",
     srcs = ["tests/run_tests.sh"],
     args = [
-        "$(rootpath :ascii3d)",
+        "$(rootpath :gallery)",
         "$(rootpath :arithmetic)",
         "$(rootpath :control_flow)",
     ],
     data = [
-        ":ascii3d",
+        ":gallery",
         ":arithmetic",
         ":control_flow",
         "tests/test_renderer.py",
     ] + glob(["tests/golden/*.txt"], allow_empty = True),
+)
+
+sh_test(
+    name = "animation_test",
+    size = "small",
+    srcs = ["tests/run_animation_tests.sh"],
+    args = ["$(rootpath :pyramid_play)", "$(rootpath :ascii3d)"],
+    data = [
+        ":pyramid_play",
+        ":ascii3d",
+        "tools/animate.py",
+        "tests/test_animation.py",
+    ],
 )
 
 sh_test(

@@ -1,12 +1,12 @@
-# I Only Rendered This Because You Asked Me To
+# I Only Danced This Pyramid Because You Asked Me To
 
-A 3D ASCII renderer written in the **Shakespeare Programming Language (SPL)**.
-The executable renders a shaded sphere, tilted torus, or rotated cube into a
-49-column by 25-row terminal frame.
+An animated 3D ASCII pyramid written in the **Shakespeare Programming Language
+(SPL)**, starring a Norwegian cast with prickly compliments and reluctant affection.
 
-The geometry, ray traversal, rotations, normals, lighting, glyph selection, and
-output loops are all in [`main.spl`](main.spl). The compiler translates the play
-to C and links it to its original runtime. Python is used to check test results.
+[`main.spl`](main.spl) computes the rotation, movement, ray intersections, face
+lighting, and every frame's characters. A small [Python launcher](tools/animate.py)
+paces the frames and manages the terminal screen and cursor. The original
+SPL compiler translates the play into C and links it to its runtime.
 
 ## Build and run
 
@@ -36,31 +36,41 @@ To select another compiler explicitly, override the project default:
 bazel build //:ascii3d --repo_env=CC=/usr/bin/clang
 ```
 
-Build once and select a shape with its initial letter:
+Run the animated pyramid directly, with no input prompt:
 
 ```sh
-bazel build //:ascii3d
-printf 's' | ./bazel-bin/ascii3d    # sphere
-printf 't' | ./bazel-bin/ascii3d    # torus
-printf 'c' | ./bazel-bin/ascii3d    # cube
+bazelisk run //:ascii3d
 ```
 
-Or build and run together:
+It rotates, sways left and right, and bobs up and down at a target of 15 frames
+per second. Press **Ctrl+C** to stop. The launcher restores the cursor and the
+previous terminal screen on exit. Use an ANSI terminal at least **65 columns
+by 24 rows**. The pyramid frame itself is 65 by 23 characters.
+
+You can adjust the pace or run a finite animation:
 
 ```sh
-printf 't' | bazel run //:ascii3d
+bazelisk run //:ascii3d -- --fps 25
+bazelisk run //:ascii3d -- --frames 128
 ```
 
-The play reads one character from standard input. At a terminal, type a letter
-and press Enter. EOF and unrecognized characters select the sphere:
+Redirecting output produces one plain frame by default. Explicit `--frames`
+prints that many frames consecutively. Plain output has no terminal escapes
+or timing delays:
 
 ```sh
-./bazel-bin/ascii3d </dev/null
+bazelisk run //:ascii3d -- --plain --start-frame 8
+bazelisk run //:ascii3d -- --plain --frames 3 > pyramid.txt
 ```
 
-There are no command-line arguments or terminal escape sequences. The output
-is one static frame with a trailing newline, so it also works when redirected
-to a file. Coordinates and view rotations are fixed in the play.
+The earlier static sphere, torus, and cube remain available in
+[`gallery.spl`](gallery.spl):
+
+```sh
+printf 's' | bazelisk run //:gallery
+printf 't' | bazelisk run //:gallery
+printf 'c' | bazelisk run //:gallery
+```
 
 The first Bazel build downloads the pinned rules_cc and rules_shell modules;
 the SPL compiler source is already vendored. Flex and Bison are host tools
@@ -84,64 +94,84 @@ This regression check simulates a broken compiler wrapper in both `CC` and
 Both builds run the full suite. It uses the installed Bazel and system GCC;
 ccache itself is not required for this simulation.
 
-The suite runs 12 checks against the compiled SPL executables and four compiler
-regression tests:
+The suite includes 30 checks:
 
-- [`tests/arithmetic.spl`](tests/arithmetic.spl) exercises square, integer square
-  root, signed division, multiplication, and remainder.
-- [`tests/control_flow.spl`](tests/control_flow.spl) counts down through a
-  conditional scene jump and recalls the values from a character's stack.
-- [`tests/test_renderer.py`](tests/test_renderer.py) checks those plays' answers,
-  frame dimensions and ASCII palette, reviewed golden frames, the sphere's
-  analytic silhouette and light direction, the torus hole, the cube's three
-  face shades, distinct shapes, EOF behavior, and input selection.
-- [`tests/test_compiler.py`](tests/test_compiler.py) checks Roman-numeral scene
-  and act headers and jumps, mixed case and whitespace, and identical renderer
-  translation using scanners generated in Flex's default and POSIX modes.
+- [`tests/test_animation.py`](tests/test_animation.py) exercises 65 frames from
+  the SPL pyramid, checks silhouettes against an independent floating-point 3D
+  reference, verifies rotation and movement, frame limits, repeatability, frame
+  dimensions, and keeping the solid inside the view. It also checks the launcher
+  using real pseudoterminals: frame timing, alternate-screen handling, and cleanup
+  after Ctrl+C and SIGTERM.
+- [`tests/arithmetic.spl`](tests/arithmetic.spl) and
+  [`tests/control_flow.spl`](tests/control_flow.spl) exercise SPL integer arithmetic,
+  stacks, and conditional scene jumps.
+- [`tests/test_renderer.py`](tests/test_renderer.py) preserves the original
+  gallery checks, including analytic sphere geometry, shading, the torus hole,
+  the cube's faces, and reviewed snapshots in [`tests/golden`](tests/golden).
+- [`tests/test_compiler.py`](tests/test_compiler.py) checks Roman-numeral headers
+  and jumps, mixed case and whitespace, and identical translation of the pyramid
+  using scanners generated in Flex's default and POSIX modes.
 
-Snapshots in [`tests/golden`](tests/golden) preserve all spaces, including those
-at the end of each row. Geometric assertions check the output independently
-of the snapshots. Every subprocess has a timeout to catch broken SPL loops.
+## How the pyramid works
 
-## How the play works
+The square pyramid has its apex at `(0, -12, 0)` and a base of half-width 12 at
+`y = 12`. Its four sloped sides satisfy `2|x| - y <= 12` and
+`2|z| - y <= 12`; the base satisfies `y <= 12`.
 
-Each terminal cell casts an orthographic ray from depth +24 toward -24 in
-quarter-unit steps. The first sample inside the selected solid supplies that
-cell's glyph. No hit produces a space. Horizontal cells advance by one world
-unit; rows advance by two, compensating for typical terminal character proportions.
+For each screen cell, the play intersects an orthographic ray with these five
+half-spaces. Their depth intervals overlap exactly where the pyramid is visible.
+The closest entering plane supplies the visible face and its normal. Direct
+plane intersections avoid marching through empty space and give clean edges.
+SPL stores intersection depths in units of 1/64, using only integer arithmetic.
 
-The sphere has radius 18. The torus has major radius 12 and tube radius 5,
-tilted using a 3–4–5 rotation in the vertical/depth plane. The cube has half-side
-10 and uses two 3–4–5 rotations to expose three faces. Fixed-point arithmetic
-preserves fractional rotated coordinates without floating-point SPL values.
+The view has a fixed 3–4–5 tilt, while the pyramid turns about its vertical axis.
+Sine and cosine are maintained in fixed point with scale 10000. Each frame
+rotates them using `(9952, 980) / 10000`, approximately 5.625 degrees. Resetting
+the rotation after 64 frames prevents cumulative drift. Sideways movement follows
+the sine; vertical bobbing follows the double-angle cosine. The whole animation
+cycle repeats exactly. Rows represent two world units and columns one to
+compensate for typical terminal character proportions.
 
-The sphere and torus use surface normals and a light toward the viewer's upper
-left; the cube uses constant brightness per face. Brightness selects from
-`.:-=+*#@`. Sampling and integer normals give intentionally discrete shading.
+Surface normals rotate with the pyramid. A light toward the viewer's upper
+left selects face shades from `.:-=+*#@`. These calculations, the pixel loops,
+and the animation loop are SPL dialogue.
 
-SPL stores integers in Shakespearean characters. A noun is worth +1 or -1,
-each adjective doubles it, and dialogue performs arithmetic. For instance,
-`a tiny furry cat` is 4, and `the square of Astrid` computes x². Questions set
-a truth flag, and `If so, let us proceed to Scene V` implements a branch.
+The native play reads two integer lines: the frame count (`0` means continuous)
+and how many initial rotation steps to skip. It emits fixed-size frames ending
+in a form-feed byte. For example, this runs the native SPL program without the
+terminal presenter:
+
+```sh
+printf '1\n8\n' | bazelisk run //:pyramid_play
+```
+
+The launcher supplies this protocol, reads completed frames, and displays them
+with cursor-home sequences in an alternate terminal screen. It handles timing
+and signals; it contains no geometry, rotation, shading, or motion calculations.
+
+SPL stores integers in named characters. A positive noun is worth 1 and each
+adjective doubles it: `a tiny furry cat` is 4. Questions set a truth flag, and
+conditional scene jumps implement branches and loops.
 
 | Character | Role |
 | --- | --- |
 | Ingrid | Director who assigns values to the other actor on stage |
-| Astrid, Sigrid | Horizontal and vertical coordinates |
-| Solveig | Ray depth, stored in quarter units |
-| Nora | Shape selection character |
-| Liv | Output glyph |
-| Frida, Maja, Thea | Rotated coordinates |
-| Eira, Hedda, Sunniva | Radial distance and temporary calculations |
-| Runa, Tuva, Hanne | Normals or squared cube coordinates |
-| Vilde | Surface brightness |
+| Astrid, Sigrid | Screen column and row |
+| Eira, Frida | Fixed-point cosine and sine |
+| Tove, Ylva | Horizontal sway and vertical bob |
+| Hilde, Silje | Translated world coordinates |
+| Anja, Bente, Grete, Heidi | Rotated side-plane slopes |
+| Inger, Lene, Mette | Plane offsets |
+| Maja, Thea, Runa | Near, far, and candidate intersection depths |
+| Solveig, Hanne | Current plane and closest visible face |
+| Hedda, Sunniva, Tuva | Clipping and rotation temporaries |
+| Vilde, Liv | Surface brightness and output glyph |
+| Nora, Kari, Marit, Oda | Frame count, limit, skipped frames, rotation phase |
 
-The Norwegian cast trades prickly compliments and reluctant affection in English.
-Scene titles and character descriptions carry the banter; executable dialogue
-uses the SPL vocabulary. The compiler word list includes these sixteen extra
-character names alongside the original Shakespearean cast. Each stage change
-leaves Ingrid with exactly one other character, so second-person assignment is unambiguous.
-Characters retain their values offstage.
+The compiler word list supports these thirty Norwegian names alongside the
+original Shakespearean cast. Each stage change leaves Ingrid with exactly one
+other character, so second-person assignment is unambiguous. Every cast member
+gets a retort; character descriptions and scene titles carry the English banter.
 
 ## Bazel integration
 
