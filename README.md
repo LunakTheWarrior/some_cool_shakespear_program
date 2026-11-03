@@ -1,4 +1,4 @@
-# The Solid World upon a Stage
+# I Only Rendered This Because You Asked Me To
 
 A 3D ASCII renderer written in the **Shakespeare Programming Language (SPL)**.
 The executable renders a shaded sphere, tilted torus, or rotated cube into a
@@ -88,23 +88,26 @@ left; the cube uses constant brightness per face. Brightness selects from
 
 SPL stores integers in Shakespearean characters. A noun is worth +1 or -1,
 each adjective doubles it, and dialogue performs arithmetic. For instance,
-`a fair fair flower` is 4, and `the square of Romeo` computes x². Questions set
+`a tiny furry cat` is 4, and `the square of Astrid` computes x². Questions set
 a truth flag, and `If so, let us proceed to Scene V` implements a branch.
 
 | Character | Role |
 | --- | --- |
-| Hamlet | Director who assigns values to the other actor on stage |
-| Romeo, Juliet | Horizontal and vertical coordinates |
-| Othello | Ray depth, stored in quarter units |
-| Ophelia | Shape selection character |
-| Macbeth | Output glyph |
-| Benvolio, Horatio, Prospero | Rotated coordinates |
-| Mercutio, Puck, Titania | Radial distance and temporary calculations |
-| Portia, Rosalind, Beatrice | Normals or squared cube coordinates |
-| Cassius | Surface brightness |
+| Ingrid | Director who assigns values to the other actor on stage |
+| Astrid, Sigrid | Horizontal and vertical coordinates |
+| Solveig | Ray depth, stored in quarter units |
+| Nora | Shape selection character |
+| Liv | Output glyph |
+| Frida, Maja, Thea | Rotated coordinates |
+| Eira, Hedda, Sunniva | Radial distance and temporary calculations |
+| Runa, Tuva, Hanne | Normals or squared cube coordinates |
+| Vilde | Surface brightness |
 
-Scene titles describe the algorithm. Each stage change leaves Hamlet with
-exactly one other character, so second-person assignment is unambiguous.
+The Norwegian cast trades prickly compliments and reluctant affection in English.
+Scene titles and character descriptions carry the banter; executable dialogue
+uses the SPL vocabulary. The compiler word list includes these sixteen extra
+character names alongside the original Shakespearean cast. Each stage change
+leaves Ingrid with exactly one other character, so second-person assignment is unambiguous.
 Characters retain their values offstage.
 
 ## Bazel integration
