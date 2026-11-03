@@ -1,0 +1,4 @@
+/bazel-*
+/.build/
+__pycache__/
+*.pyc

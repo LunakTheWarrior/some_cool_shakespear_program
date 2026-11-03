@@ -1,0 +1,54 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["reciprocal"])
+
+cc_binary(
+    name = "makescanner",
+    srcs = ["makescanner.c"],
+)
+
+genrule(
+    name = "lexer_spec",
+    srcs = glob(["include/*"]),
+    outs = ["scanner.l"],
+    cmd = "$(location :makescanner) $$(dirname $(location include/article.wordlist)) > $@",
+    tools = [":makescanner"],
+)
+
+genrule(
+    name = "parser",
+    srcs = ["grammar.y"],
+    outs = ["grammar.tab.c", "grammar.tab.h"],
+    cmd = "bison --defines=$(location grammar.tab.h) --output=$(location grammar.tab.c) $<",
+)
+
+genrule(
+    name = "lexer",
+    srcs = [":lexer_spec"],
+    outs = ["scanner.c"],
+    cmd = "flex -Cem -t $< > $@",
+)
+
+cc_binary(
+    name = "spl2c",
+    includes = ["."],
+    srcs = [
+        ":lexer",
+        ":parser",
+        "strutils.c",
+        "strutils.h",
+        "telma.h",
+    ],
+    linkopts = ["-lfl"],
+)
+
+cc_library(
+    name = "runtime",
+    srcs = ["libspl.c", "strutils.c"],
+    hdrs = ["spl.h", "strutils.h"],
+    includes = ["."],
+    linkopts = ["-lm"],
+)

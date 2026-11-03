@@ -1,0 +1,36 @@
+load("//bazel:spl.bzl", "spl_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+spl_binary(
+    name = "ascii3d",
+    src = "main.spl",
+)
+
+spl_binary(
+    name = "arithmetic",
+    src = "tests/arithmetic.spl",
+    testonly = True,
+)
+
+spl_binary(
+    name = "control_flow",
+    src = "tests/control_flow.spl",
+    testonly = True,
+)
+
+sh_test(
+    name = "renderer_test",
+    size = "small",
+    srcs = ["tests/run_tests.sh"],
+    args = [
+        "$(rootpath :ascii3d)",
+        "$(rootpath :arithmetic)",
+        "$(rootpath :control_flow)",
+    ],
+    data = [
+        ":ascii3d",
+        ":arithmetic",
+        ":control_flow",
+        "tests/test_renderer.py",
+    ] + glob(["tests/golden/*.txt"], allow_empty = True),
+)
